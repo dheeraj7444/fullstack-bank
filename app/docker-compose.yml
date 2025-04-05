@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.8' # You can update to latest supported
 
 services:
   frontend:
@@ -14,8 +14,9 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:3001
     healthcheck:
-      test: ["CMD", "lsof", "-t", "-i:3000"]
-      timeout: 10s
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
       retries: 5
 
   backend:
@@ -36,20 +37,23 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
     healthcheck:
-      test: ["CMD", "lsof", "-t", "-i:3001"]
-      timeout: 10s
+      test: ["CMD-SHELL", "curl -f http://localhost:3001 || exit 1"]
+      interval: 10s
+      timeout: 5s
       retries: 5
+
   db:
     container_name: ng_db
     image: postgres:15.1
     platform: linux/x86_64
     ports:
       - 3002:5432
-    user: postgres
     environment:
       - POSTGRES_PASSWORD=123456
-    restart: 'always'
+      - POSTGRES_DB=db_prod
+    restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-d", "db_prod"]
-      timeout: 10s
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
       retries: 5
