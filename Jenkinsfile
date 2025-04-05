@@ -24,15 +24,15 @@ pipeline {
         } 
         stage('Trive FS Scan') {
             steps {
-                sh "trivy fs ."
+              sh "trivy fs ."
             }
         }
         stage('SONARQUBE ANALYSIS') {
             steps {
-                withSonarQubeEnv('sonar') {
-                sh " $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Bank -Dsonar.projectKey=Bank "
+             withSonarQubeEnv('sonar') {
+             sh " $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Bank -Dsonar.projectKey=Bank "
    
-                }  
+               }  
             }
         }    
         stage('Install Dependencies') {
@@ -57,7 +57,21 @@ pipeline {
         }
         stage('Deploy to Conatiner') {
             steps {
-               sh 'cd app && docker compose up -d'
+               sh 'cd app && docker compose build'
+            }
+        }
+        stage('Docker Puss') {
+            steps {
+               withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+              sh """
+                 echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                  docker tag dheeraj7444/ng_frontend:latest dheeraj7444/ng_frontend:$BUILD_ID
+                  docker tag dheeraj7444/ng_backend:latest dheeraj7444/ng_backend:$BUILD_ID
+                  docker push dheeraj7444/ng_frontend:$BUILD_ID
+                  docker push dheeraj7444/ng_backend:$BUILD_ID
+                  docker rmi -f dheeraj7444/ng_frontend:latest dheeraj7444/ng_backend:latest dheeraj7444/ng_frontend:$BUILD_ID dheeraj7444/ng_backend:$BUILD_ID
+                 """
+               } 
             }
         }
     }
